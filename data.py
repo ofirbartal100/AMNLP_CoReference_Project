@@ -27,13 +27,11 @@ class CorefDataset(Dataset):
     def __init__(self, file_path, tokenizer, max_seq_length=-1):
         self.tokenizer = tokenizer
         logger.info(f"Reading dataset from {file_path}")
-        examples, self.max_mention_num, self.max_cluster_size, self.max_num_clusters = self._parse_jsonlines(
-            file_path)
+        examples, self.max_mention_num, self.max_cluster_size, self.max_num_clusters = self._parse_jsonlines(file_path)
         self.max_seq_length = max_seq_length
-        self.examples, self.lengths, self.num_examples_filtered = self._tokenize(
-            examples)
-        logger.info(
-            f"Finished preprocessing Coref dataset. {len(self.examples)} examples were extracted, {self.num_examples_filtered} were filtered due to sequence length.")
+        self.examples, self.lengths, self.num_examples_filtered = self._tokenize(examples)
+        # self.examples, self.lengths, self.num_examples_filtered = self.extended_tokenize(examples)
+        logger.info(f"Finished preprocessing Coref dataset. {len(self.examples)} examples were extracted, {self.num_examples_filtered} were filtered due to sequence length.")
 
 
     def _parse_jsonlines(self, file_path):
@@ -58,10 +56,6 @@ class CorefDataset(Dataset):
         return examples, max_mention_num, max_cluster_size, max_num_clusters
 
     def _augment_data(self, tokens, clusters):
-        # start_mention = 5
-        # end_mention = 6
-        # not_mention_token = 3
-        # or_token = 4
 
         if isinstance(self.tokenizer ,BartTokenizer):
             start_mention = 50265
@@ -78,12 +72,9 @@ class CorefDataset(Dataset):
             for m in cluster:
                 if(m[0] == m[1]):
                     target[m[0]].append(('se', idx+start_mention+3))
-                    # target[m[0]].append(('se', idx+7))
                 else:
                     target[m[0]].append(('s', idx+start_mention+3))
-                    # target[m[0]].append(('s', idx+7))
                     target[m[1]].append(('e', idx+start_mention+3))
-                    # target[m[1]].append(('e', idx+7))
 
         i = 0
         j = 0
@@ -108,42 +99,13 @@ class CorefDataset(Dataset):
             augmented_data.append(tokens[i])
 
 
-        # self.print_augmentation(augmented_data)
-        # self.reverse_augmentation(augmented_data)
-
         f1 = self.eval_augmentation(augmented_data, clusters)
         if f1 < 0.99:
             print("augmentation bug")
 
         return augmented_data
 
-    def print_augmentation(self, aug):
-        s = ''
-
-        start_mention = 5
-        end_mention = 6
-        not_mention_token = 3
-        or_token = 4
-        pad_token = 0
-
-        for a in aug:
-            if a > 6:
-                s += str(a-7)
-            else:
-                if a == start_mention:
-                    s += '('
-                elif a == end_mention:
-                    s += ')'
-                elif a == not_mention_token:
-                    s += '-'
-                elif a == or_token:
-                    s += '|'
-                elif a == pad_token:
-                    s += ' '
-                else:
-                    s += '?'
-        return s
-
+   
     def eval_augmentation(self, augmentation, gold_clusters):
         mention_evaluator = MentionEvaluator()
         coref_evaluator = CorefEvaluator()
@@ -165,20 +127,13 @@ class CorefDataset(Dataset):
         return f1
 
     def reverse_augmentation(self, tokens):
-        # start_mention = 5
-        # end_mention = 6
-        # not_mention_token = 3
-        # or_token = 4
-        pad_token = 0
-
+        
         if isinstance(self.tokenizer ,BartTokenizer):
             start_mention = 50265
         else:            
             start_mention = 32000
 
         end_mention = start_mention+1
-        or_token = start_mention+2
-
 
         clusters_dict = {}
         i = 0
@@ -191,20 +146,14 @@ class CorefDataset(Dataset):
                 else:
                     clusters_dict[tokens[i+1]] = (('s', ci),)
                 i += 1
-                # ci += 1
 
             elif tokens[i] >= start_mention+3 and i+1 < len(tokens) and tokens[i+1] == end_mention:  # id)
-                # ci += 1
-
                 if tokens[i] in clusters_dict:
                     clusters_dict[tokens[i]] += (('e', ci),)
                 else:
                     clusters_dict[tokens[i]] = (('e', ci),)
                 i += 1
 
-
-            # elif tokens[i] == or_token:
-                # ci -= 1
 
             elif tokens[i] < start_mention:
                 ci += 1
@@ -235,7 +184,7 @@ class CorefDataset(Dataset):
 
         return clusters
 
-    def _tokenize2(self, examples):#normal tokanization
+    def _tokenize(self, examples):#normal tokanization
         coref_examples = []
         lengths = []
         num_examples_filtered = 0
@@ -313,7 +262,7 @@ class CorefDataset(Dataset):
         ) for example in padded_batch], dim=0) for i in range(len(example)))
         return tensored_batch
 
-    def _tokenize(self, examples):#extended tokenization
+    def extended_tokenize(self, examples):#extended tokenization
         seperetor = '.'
         coref_examples = []
         lengths = []
@@ -340,8 +289,6 @@ class CorefDataset(Dataset):
                 token_ids.extend(tokenized)
                 word_idx_to_end_token_idx[idx] = len(token_ids)
 
-                
-
 
             base_clusters = [[(word_idx_to_start_token_idx[start], word_idx_to_end_token_idx[end]) for start, end in cluster] for
                 cluster in clusters]
@@ -364,35 +311,6 @@ class CorefDataset(Dataset):
 
         return coref_examples, lengths, num_examples_filtered
 
-    def __extend_token_ids(self, token_ids):
-        if self.model == 't5':
-            dot = [3, 5]
-            eos = 1
-        else:
-            dot = [479]
-            eos = 2
-
-        idxs = find_sub_list(dot, token_ids) 
-        sentences = []
-
-        start = 0
-        for idx in idxs:
-            end = idx[1]+1
-            sentences.append((token_ids[start:end],start,end))
-            start = end
-
-        extended_tokens = [(token_ids, 0, len(token_ids))]
-        num_scentences = len(sentences)
-        for i in range(num_scentences-1):
-            token_sentence = sentences[i][0].copy()
-            sub = random.randint(i+2,num_scentences)
-            for j in range(i+1,sub):
-                token_sentence.extend(sentences[j][0].copy())
-            token_sentence.append(eos)
-            extended_tokens.append((token_sentence, sentences[i][1], sentences[j][2]+1))
-            
-        return extended_tokens
-        
     def extend_token_ids(self,token_ids, idxs):
         eos = token_ids[-1]
         sentences = []
