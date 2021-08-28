@@ -26,7 +26,7 @@ def main():
     
     args = parse_args()
 
-    wandb_flag=True ####################################################################################################
+    wandb_flag=False ####################################################################################################
     if wandb_flag:
         wandb.init(project='Coref', entity='ofirbartal100',config=args,notes=f"{args.model_type}")
         args.output_dir += "/" + wandb.run.name
