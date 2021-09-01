@@ -14,7 +14,7 @@ from transformers import AdamW, get_linear_schedule_with_warmup
 logger = logging.getLogger(__name__)
 
 
-def train(args, train_dataset, model, tokenizer, evaluator, wandb_flag=False):
+def train(args, train_dataset, model, tokenizer, evaluator, wandb_flag=False,evaluator_extended=None):
     """ Train the model """
 
     train_dataloader = BucketBatchSampler(
@@ -155,36 +155,36 @@ def train(args, train_dataset, model, tokenizer, evaluator, wandb_flag=False):
                 model.zero_grad()
                 global_step += 1
 
-                # Log metrics
-                if args.logging_steps > 0 and global_step % args.logging_steps == 0:
-                    logger.info(f"\nloss step {global_step}: {(tr_loss - epoch_loss) / args.logging_steps}")
-                    logging_loss = tr_loss
+                # # Log metrics
+                # if args.logging_steps > 0 and global_step % args.logging_steps == 0:
+                #     logger.info(f"\nloss step {global_step}: {(tr_loss - epoch_loss) / args.logging_steps}")
+                #     logging_loss = tr_loss
 
                 # evaluate model
-                if args.do_eval and args.eval_steps > 0 and global_step % args.eval_steps == 0:
-                    results = evaluator.evaluate(
-                        model, prefix=f'step_{global_step}', tb_writer=None, global_step=global_step)
-                    f1 = results["f1"]
-                    # save model checkpoint again
-                    # if f1 > best_f1:
-                    #     best_f1 = f1
-                    #     best_global_step = global_step
-                    #     # Save model checkpoint
-                    #     output_dir = os.path.join(args.output_dir, 'checkpoint-{}'.format(global_step))
-                    #     if not os.path.exists(output_dir):
-                    #         os.makedirs(output_dir)
-                    #     # Take care of distributed/parallel training
-                    #     model_to_save = model.module if hasattr(model, 'module') else model
-                    #     model_to_save.save_pretrained(output_dir)
-                    #     tokenizer.save_pretrained(output_dir)
+                # if args.do_eval and args.eval_steps > 0 and global_step % args.eval_steps == 0:
+                #     results = evaluator.evaluate(
+                #         model, prefix=f'step_{global_step}', tb_writer=None, global_step=global_step)
+                #     f1 = results["f1"]
+                #     # save model checkpoint again
+                #     # if f1 > best_f1:
+                #     #     best_f1 = f1
+                #     #     best_global_step = global_step
+                #     #     # Save model checkpoint
+                #     #     output_dir = os.path.join(args.output_dir, 'checkpoint-{}'.format(global_step))
+                #     #     if not os.path.exists(output_dir):
+                #     #         os.makedirs(output_dir)
+                #     #     # Take care of distributed/parallel training
+                #     #     model_to_save = model.module if hasattr(model, 'module') else model
+                #     #     model_to_save.save_pretrained(output_dir)
+                #     #     tokenizer.save_pretrained(output_dir)
 
-                    #     torch.save(args, os.path.join(output_dir, 'training_args.bin'))
-                    #     logger.info("Saving model checkpoint to %s", output_dir)
+                #     #     torch.save(args, os.path.join(output_dir, 'training_args.bin'))
+                #     #     logger.info("Saving model checkpoint to %s", output_dir)
 
-                    #     torch.save(optimizer.state_dict(), os.path.join(output_dir, "optimizer.pt"))
-                    #     torch.save(scheduler.state_dict(), os.path.join(output_dir, "scheduler.pt"))
-                    #     logger.info("Saving optimizer and scheduler states to %s", output_dir)
-                    logger.info(f"best f1 is {best_f1} on global step {best_global_step}")
+                #     #     torch.save(optimizer.state_dict(), os.path.join(output_dir, "optimizer.pt"))
+                #     #     torch.save(scheduler.state_dict(), os.path.join(output_dir, "scheduler.pt"))
+                #     #     logger.info("Saving optimizer and scheduler states to %s", output_dir)
+                #     logger.info(f"best f1 is {best_f1} on global step {best_global_step}")
                 # save model checkpoint
                 # if args.save_steps > 0 and global_step % args.save_steps == 0 and \
                 #         (not args.save_if_best or (best_global_step == global_step)):
@@ -204,15 +204,23 @@ def train(args, train_dataset, model, tokenizer, evaluator, wandb_flag=False):
                 #     torch.save(scheduler.state_dict(), os.path.join(output_dir, "scheduler.pt"))
                 #     logger.info("Saving optimizer and scheduler states to %s", output_dir)
 
+        dev_loss = eval(args,evaluator.eval_dataset,model)
+        if evaluator_extended:
+            dev_loss_extended = eval(args,evaluator_extended.eval_dataset,model)
+
+
         if wandb_flag:
             wandb.log({"loss": (tr_loss - epoch_loss) / len(epoch_iterator)}, step=epoch)
-            wandb.log({"mention precision": results["mention precision"]}, step=epoch)
-            wandb.log({"mention recall": results["mention recall"]}, step=epoch)
-            wandb.log({"mention f1": results["mention f1"]}, step=epoch)
-            wandb.log({"mention precision": results["mention precision"]}, step=epoch)
-            wandb.log({"precision": results["precision"]}, step=epoch)
-            wandb.log({"recall": results["recall"]}, step=epoch)
-            wandb.log({"f1": results["f1"]}, step=epoch)
+            wandb.log({"dev_loss": dev_loss}, step=epoch)
+            if evaluator_extended:
+                wandb.log({"dev_loss_extended": dev_loss_extended}, step=epoch)
+
+            # wandb.log({"mention recall": results["mention recall"]}, step=epoch)
+            # wandb.log({"mention f1": results["mention f1"]}, step=epoch)
+            # wandb.log({"mention precision": results["mention precision"]}, step=epoch)
+            # wandb.log({"precision": results["precision"]}, step=epoch)
+            # wandb.log({"recall": results["recall"]}, step=epoch)
+            # wandb.log({"f1": results["f1"]}, step=epoch)
 
         epoch_loss = tr_loss
 
@@ -231,3 +239,37 @@ def set_seed(seed):
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
+
+
+
+def eval(args, train_dataset, model):
+    """ Train the model """
+
+    train_dataloader = BucketBatchSampler(
+        train_dataset, max_total_seq_len=args.max_total_seq_len, batch_size_1=True)
+
+    
+    tr_loss, logging_loss = 0.0, 0.0
+    model.zero_grad()
+    set_seed(12)  # Added here for reproducibility (even between python 2 and 3)
+
+    
+    # Added here for reproducibility
+    set_seed(12)
+
+    epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=False)
+    with torch.no_grad():
+        for step, batch in enumerate(epoch_iterator):
+            batch = tuple(tensor.to(args.device) for tensor in batch[1])
+            input_ids, input_attention_mask, gold_clusters, augmented_data, output_attention_mask = batch
+            model.eval()
+
+            outputs = model(input_ids=input_ids, input_attention_mask=input_attention_mask,
+                            data_augmentations=augmented_data, output_attention_mask=output_attention_mask)
+
+            loss = outputs[0]  # model outputs are always tuple in transformers (see doc)
+
+            tr_loss += loss.item()
+
+
+    return  tr_loss / len(train_dataloader)

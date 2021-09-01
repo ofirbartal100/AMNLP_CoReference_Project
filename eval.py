@@ -159,9 +159,9 @@ class Evaluator:
 
             with torch.no_grad():
                 end  = int((input_ids==1).max(1).indices[0])
+                logger.info(f'input_size: {end} , shape: {input_ids.shape}')
+
                 outputs = model.generate(input_ids,input_attention_mask,data_augmentations, output_attention_mask, num_beams=beam_size, early_stopping=True,min_length=end,max_length=2*end)#, bos_token_id=101, eos_token_id=102,pad_token_id=0
-                outputs1 = model.generate(input_ids,input_attention_mask,data_augmentations, output_attention_mask, num_beams=beam_size, min_length=end,max_length=2*end)#, bos_token_id=101, eos_token_id=102,pad_token_id=0
-                outputs2 = model.generate(input_ids,input_attention_mask,data_augmentations, output_attention_mask, num_beams=beam_size, min_length=len(input_ids[0]),max_length=len(input_ids[0]))#, bos_token_id=101, eos_token_id=102,pad_token_id=0
                 
             batch_np = tuple(tensor.cpu().numpy() for tensor in batch)
             outputs_np = (outputs.cpu().numpy(),)

@@ -25,14 +25,12 @@ def parse_args():
         "--train_file_cache",
         default=None,
         type=str,
-        required=True,
         help="The output directory where the datasets will be written and read from.",
     )
     parser.add_argument(
         "--predict_file_cache",
         default=None,
         type=str,
-        required=True,
         help="The output directory where the datasets will be written and read from.",
     )
 
@@ -56,7 +54,7 @@ def parse_args():
                         default=None,
                         type=str,
                         help="Where do you want to store the pre-trained models downloaded from s3")
-    parser.add_argument("--max_seq_length", default=-1, type=int)
+    parser.add_argument("--max_seq_length", default=800, type=int)
     parser.add_argument("--gpu_id", default=0, type=int)
 
     parser.add_argument("--do_train", action="store_true", help="Whether to run training.")
@@ -95,7 +93,7 @@ def parse_args():
 
     parser.add_argument("--max_span_length", type=int, required=False, default=30)
 
-    parser.add_argument("--max_total_seq_len", type=int, default=3500)
+    parser.add_argument("--max_total_seq_len", type=int, default=1500)
 
     parser.add_argument("--cont", type=str, default=None)
 

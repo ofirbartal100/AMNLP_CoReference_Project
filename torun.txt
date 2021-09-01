@@ -1,0 +1,24 @@
+## bart raw
+nohup python run_coref.py --output_dir=/home/ofirbartal/Projects/Coref/bart-raw --model_type=bart-raw --train_file=/home/ofirbartal/Projects/Coref/data/train.english.jsonlines --predict_file=/home/ofirbartal/Projects/Coref/data/dev.english.jsonlines --do_train --gpu_id=1 --do_eval --num_train_epochs=100 --logging_steps=500 --save_steps=1000000 --eval_steps=1000 --max_seq_length=800 --train_file_cache=/home/ofirbartal/Projects/Coref/data/train.bart.pkl --predict_file_cache=/home/ofirbartal/Projects/Coref/data/dev.bart.pkl --max_total_seq_len=1500 --gradient_accumulation_steps=1 --warmup_steps=4500 --adam_epsilon=8e-07 --head_learning_rate=0.00031 --learning_rate=3.1e-05 --adam_beta2=0.93 --weight_decay=0.007 --dropout_prob=0.15 --overwrite_output_dir --adam_beta1=0.820 > nohup_raw_bart.out &
+
+## bart freeze
+nohup python run_coref.py --output_dir=/home/ofirbartal/Projects/Coref/bart-freeze --model_type=bart --train_file=/home/ofirbartal/Projects/Coref/data/train.english.jsonlines --predict_file=/home/ofirbartal/Projects/Coref/data/dev.english.jsonlines --do_train --gpu_id=1 --do_eval --num_train_epochs=100 --logging_steps=500 --save_steps=1000000 --eval_steps=1000 --max_seq_length=800 --train_file_cache=/home/ofirbartal/Projects/Coref/data/train.bart.pkl --predict_file_cache=/home/ofirbartal/Projects/Coref/data/dev.bart.pkl --max_total_seq_len=1500 --gradient_accumulation_steps=1 --warmup_steps=4500 --adam_epsilon=8e-07 --head_learning_rate=0.00031 --learning_rate=3.1e-05 --adam_beta2=0.93 --weight_decay=0.007 --dropout_prob=0.15 --overwrite_output_dir --adam_beta1=0.820 > nohup_bart_freeze.out &up_raw_bart.out &
+
+## bart 
+nohup python run_coref.py --output_dir=/home/ofirbartal/Projects/Coref/bart-doc --model_type=bart --train_file=/home/ofirbartal/Projects/Coref/data/train.english.jsonlines --predict_file=/home/ofirbartal/Projects/Coref/data/dev.english.jsonlines --do_train --gpu_id=1 --do_eval --num_train_epochs=100 --logging_steps=500 --save_steps=1000000 --eval_steps=1000 --max_seq_length=800 --train_file_cache=/home/ofirbartal/Projects/Coref/data/train.bart.pkl --predict_file_cache=/home/ofirbartal/Projects/Coref/data/dev.bart.full.pkl --max_total_seq_len=1500 --gradient_accumulation_steps=1 --warmup_steps=4500 --adam_epsilon=8e-07 --head_learning_rate=0.00031 --learning_rate=3.1e-05 --adam_beta2=0.93 --weight_decay=0.007 --dropout_prob=0.15 --overwrite_output_dir --adam_beta1=0.820 > nohup_bartout &
+
+## t5
+nohup python run_coref.py --output_dir=/home/ofirbartal/Projects/Coref/t5-doc --model_type=t5 --train_file=/home/ofirbartal/Projects/Coref/data/train.english.jsonlines --predict_file=/home/ofirbartal/Projects/Coref/data/dev.english.jsonlines --do_train --gpu_id=0 --do_eval --num_train_epochs=100 --logging_steps=500 --save_steps=1000000 --eval_steps=1000 --max_seq_length=800 --train_file_cache=/home/ofirbartal/Projects/Coref/data/train.t5.pkl --predict_file_cache=/home/ofirbartal/Projects/Coref/data/dev.t5.full.pkl --max_total_seq_len=1500 --gradient_accumulation_steps=1 --warmup_steps=35000 --adam_epsilon=0.0000018 --head_learning_rate=3e-4 --learning_rate=0.000458 --adam_beta2=0.62 --weight_decay=0.02 --dropout_prob=0.1 --overwrite_output_dir > nohup_t5.out &
+
+## t5 freeze
+nohup python run_coref.py --output_dir=/home/ofirbartal/Projects/Coref/t5-freeze --model_type=t5 --do_train --gpu_id=0 --do_eval --num_train_epochs=100 --overwrite_output_dir --freeze_shared > nohup_t5_freeze.out &
+
+
+nohup python run_coref.py --output_dir=/home/ofirbartal/Projects/Coref/t5-raw-doc --model_type=t5-raw --do_train --gpu_id=0 --do_eval --num_train_epochs=100 --overwrite_output_dir > nohup_t5_raw_doc.out &
+
+
+nohup python run_coref.py --output_dir=/home/ofirbartal/Projects/Coref/t5-ext-doc --model_type=t5 --do_train --gpu_id=0 --do_eval --num_train_epochs=100 --overwrite_output_dir > nohup_t5_ext_doc.out &
+
+nohup python run_coref.py --output_dir=/home/ofirbartal/Projects/Coref/bart-raw-doc --model_type=bart-raw --do_train --gpu_id=2 --do_eval --num_train_epochs=100 --overwrite_output_dir > nohup_bart_raw_doc.out &
+
+nohup python run_coref.py --output_dir=/home/ofirbartal/Projects/Coref/bart-ext-doc --model_type=bart --do_train --gpu_id=2 --do_eval --num_train_epochs=6 --overwrite_output_dir > nohup_bart_ext_doc.out

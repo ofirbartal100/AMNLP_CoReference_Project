@@ -29,8 +29,8 @@ class CorefDataset(Dataset):
         logger.info(f"Reading dataset from {file_path}")
         examples, self.max_mention_num, self.max_cluster_size, self.max_num_clusters = self._parse_jsonlines(file_path)
         self.max_seq_length = max_seq_length
-        self.examples, self.lengths, self.num_examples_filtered = self._tokenize(examples)
-        # self.examples, self.lengths, self.num_examples_filtered = self.extended_tokenize(examples)
+        # self.examples, self.lengths, self.num_examples_filtered = self._tokenize(examples)
+        self.examples, self.lengths, self.num_examples_filtered = self.extended_tokenize(examples)
         logger.info(f"Finished preprocessing Coref dataset. {len(self.examples)} examples were extracted, {self.num_examples_filtered} were filtered due to sequence length.")
 
 
@@ -65,7 +65,8 @@ class CorefDataset(Dataset):
         end_mention = start_mention+1
         or_token = start_mention+2
 
-        target = [[] for t in tokens]
+        target = [[] for t in range(len(tokens) + 1)]
+        
         sorted_clusters = [ sorted(c,  key=lambda cc: cc[0]) for c in clusters]
         sorted_clusters = sorted(sorted_clusters, key=lambda c: c[0][0])
         for idx, cluster in enumerate(sorted_clusters):
@@ -79,8 +80,7 @@ class CorefDataset(Dataset):
         i = 0
         j = 0
         augmented_data = []
-        for i in range(len(target)):
-            
+        for i in range(len(tokens)):
             for mi, m in enumerate(target[i]):
                 if mi > 0:
                     augmented_data.append(or_token)
@@ -95,9 +95,14 @@ class CorefDataset(Dataset):
                     augmented_data.append(start_mention)
                     augmented_data.append(m[1])
                 
-
             augmented_data.append(tokens[i])
 
+        for mi, m in enumerate(target[-1]): # if there are mentions that end in the end of the scentence
+                if mi > 0:
+                    augmented_data.append(or_token)
+                if 'e' in m:
+                    augmented_data.append(m[1])
+                    augmented_data.append(end_mention)
 
         f1 = self.eval_augmentation(augmented_data, clusters)
         if f1 < 0.99:
@@ -205,7 +210,7 @@ class CorefDataset(Dataset):
 
                 word_idx_to_end_token_idx[idx] = len(token_ids)
 
-            token_ids.append(self.tokenizer.eos_token_id)
+            # token_ids.append(self.tokenizer.eos_token_id)
 
             new_clusters = [
                 [(word_idx_to_start_token_idx[start], word_idx_to_end_token_idx[end]) for start, end in cluster] for
@@ -218,7 +223,7 @@ class CorefDataset(Dataset):
                 num_examples_filtered += 1
                 continue
 
-            lengths.append(len(token_ids))
+            lengths.append(len(augmented))
 
             if new_clusters != []:
                 coref_examples.append(((doc_key, end_token_idx_to_word_idx), CorefExample(
@@ -245,15 +250,16 @@ class CorefDataset(Dataset):
         return clusters
 
     def pad_batch(self, batch, max_length):
+        max_length = max_length +1 # for eos token
         padded_batch = []
         for example in batch:
             encoded_dict = self.tokenizer.encode_plus(
-                example[0], pad_to_max_length=True, max_length=max_length, return_tensors='pt')
+                example[0], padding='max_length', max_length=max_length, return_tensors='pt',truncation = True)
             clusters = self.pad_clusters(example.clusters)
 
             # add padding to augmented data as well
             encoded_dict_augmented = self.tokenizer.encode_plus(
-                example[2], pad_to_max_length=True, max_length=max_length, return_tensors='pt')
+                example[2], padding='max_length', max_length=max_length, return_tensors='pt',truncation = True)
 
             example = (encoded_dict["input_ids"], encoded_dict['attention_mask'], torch.tensor(
                 clusters), encoded_dict_augmented["input_ids"], encoded_dict_augmented['attention_mask'])
@@ -312,7 +318,8 @@ class CorefDataset(Dataset):
         return coref_examples, lengths, num_examples_filtered
 
     def extend_token_ids(self,token_ids, idxs):
-        eos = token_ids[-1]
+        # eos = token_ids[-1]
+        min_span_size = 3
         sentences = []
 
         start = 0
@@ -323,12 +330,12 @@ class CorefDataset(Dataset):
 
         extended_tokens = [(token_ids, 0, len(token_ids))]
         num_scentences = len(sentences)
-        for i in range(num_scentences-1):
+        for i in range(num_scentences-min_span_size+1):
             token_sentence = sentences[i][0].copy()
-            sub = random.randint(i+2,num_scentences)
+            sub = random.randint(i+min_span_size,num_scentences)
             for j in range(i+1,sub):
                 token_sentence.extend(sentences[j][0].copy())
-            token_sentence.append(eos)
+            # token_sentence.append(eos)
             extended_tokens.append((token_sentence, sentences[i][1], sentences[j][2]+1))
             
         return extended_tokens
