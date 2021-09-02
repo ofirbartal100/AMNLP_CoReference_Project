@@ -30,9 +30,10 @@ def main():
 
     if 'bart' in args.model_type:
         args.gpu_id = 2
-        args.train_file_cache = '/home/ofirbartal/Projects/Coref/data/train.bart.extended.pkl'
+        # args.train_file_cache = '/home/ofirbartal/Projects/Coref/data/train.bart.extended.pkl'
+        args.train_file_cache = '/home/ofirbartal/Projects/Coref/data/train.bart.pkl'
         args.predict_file_cache = '/home/ofirbartal/Projects/Coref/data/dev.bart.full.pkl'
-        args.predict_file_cache_extended = '/home/ofirbartal/Projects/Coref/data/dev.bart.extended.pkl'
+        # args.predict_file_cache_extended = '/home/ofirbartal/Projects/Coref/data/dev.bart.extended.pkl'
         args.warmup_steps = 4500
         args.adam_epsilon = 8e-07
         args.head_learning_rate = 0.00031
@@ -44,10 +45,10 @@ def main():
 
     elif 't5' in args.model_type:
         args.gpu_id = 0
-        args.train_file_cache = '/home/ofirbartal/Projects/Coref/data/train.t5.extended.pkl'
-        # args.train_file_cache = '/home/ofirbartal/Projects/Coref/data/train.t5.pkl'
+        # args.train_file_cache = '/home/ofirbartal/Projects/Coref/data/train.t5.extended.pkl'
+        args.train_file_cache = '/home/ofirbartal/Projects/Coref/data/train.t5.pkl'
         args.predict_file_cache = '/home/ofirbartal/Projects/Coref/data/dev.t5.full.pkl'
-        args.predict_file_cache_extended = '/home/ofirbartal/Projects/Coref/data/dev.t5.extended.pkl'
+        # args.predict_file_cache_extended = '/home/ofirbartal/Projects/Coref/data/dev.t5.extended.pkl'
         args.warmup_steps = 35000
         args.adam_epsilon = 0.0000018
         args.head_learning_rate = 3e-4
@@ -133,9 +134,9 @@ def main():
 
     evaluator = Evaluator(args, tokenizer)
 
-    args.predict_file_cache = args.predict_file_cache_extended
-    evaluator_extended = Evaluator(args, tokenizer)
-    # evaluator_extended =None
+    # args.predict_file_cache = args.predict_file_cache_extended
+    # evaluator_extended = Evaluator(args, tokenizer)
+    evaluator_extended =None
 
     
     # Training

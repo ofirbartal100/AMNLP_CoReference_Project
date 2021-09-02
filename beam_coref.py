@@ -42,15 +42,18 @@ def main():
     # Set seed
     set_seed(12)
 
-    if args.model_type == 'bart' or args.model_type == 'bart-raw':
+    if args.model_type == 'bert_generation':
+        tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
+        model = OurModel(args)
+    elif args.model_type == 'bart' or args.model_type == 'bart-raw':
         num_extra_tokens = 101
         extra_tokens = [f'<extra_token_{i}>' for i in range(num_extra_tokens)]
-        tokenizer = BartTokenizer.from_pretrained('facebook/bart-base') 
+        tokenizer = BartTokenizer.from_pretrained('facebook/bart-base')
         tokenizer.add_tokens(extra_tokens)
-        model = OurModel(args,tokenizer)
+        model = OurModel(args, tokenizer)
     elif args.model_type == 't5' or args.model_type == 't5-raw':
-        tokenizer = T5Tokenizer.from_pretrained('t5-small',model_max_length=2048)   
-        model = OurModel(args)    
+        tokenizer = T5Tokenizer.from_pretrained('t5-small')
+        model = OurModel(args)
     else:
         raise ValueError("model_type should be one of [None,'bart','t5']")
 

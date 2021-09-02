@@ -92,7 +92,7 @@
                 // "--overwrite_output_dir",
                 "--freeze_shared",
                 // "--cont=/home/ofirbartal/Projects/Coref/out_t5/stellar-sweep-2"
-                "--cont=/home/ofirbartal/Projects/Coref/t5/driven-cloud-132"
+                "--cont=/home/ofirbartal/Projects/Coref/t5-ext-doc/charmed-field-164"
                 // "--cont=/home/ofirbartal/Projects/Coref/out_bart/different-sweep-5"
 
             ]
