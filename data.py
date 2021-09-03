@@ -357,7 +357,9 @@ def get_dataset(args, tokenizer, evaluate=False):
     if read_from_cache:
         logger.info(f"Reading dataset from {file_path}")
         with open(file_path, 'rb') as f:
-            return pickle.load(f)
+            a = pickle.load(f)
+            a.tokenizer.vocab_file = tokenizer.vocab_file
+            return a
 
     file_path, cache_path = (args.predict_file, args.predict_file_cache) if evaluate else (
         args.train_file, args.train_file_cache)
